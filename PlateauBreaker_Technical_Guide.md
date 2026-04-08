@@ -20,7 +20,7 @@ All endpoints under `/analytics/*` have explicit Pydantic response models define
 - `GET /analytics/dashboard`
   - 7-day averages are based on the **last 7 calendar days ending today** (requires at least 5 recorded days; otherwise the average fields are `null`)
   - `current_weight` is the latest recorded weight (see `last_record_date`)
-  - `weight_change_7d` is **today's weight minus the weight on the exact date 7 days ago**; if either date is missing, it is `null`
+  - `weight_change_7d` is **today's weight minus the weight on the exact date 7 days ago**; if **either** date is missing, it is `null`
 
 - `GET /analytics/trends?days=7..365`
   - Time-series data for charts

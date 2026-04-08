@@ -28,9 +28,8 @@ def test_reason_analyzer_flags_sleep_and_calories():
         )
 
     result = analyze_reasons(records, calorie_target=2000)
-    assert result["status"] in ("ok", "insufficient_data")
+    assert result.status in ("ok", "insufficient_data")
 
-    codes = {r["code"] for r in result.get("all_reasons", [])}
+    codes = {r.code for r in (result.all_reasons or [])}
     assert "SleepIssue" in codes
     assert "CalorieIssue" in codes
-

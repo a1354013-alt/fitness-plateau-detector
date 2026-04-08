@@ -1,83 +1,160 @@
-import { ref, computed } from 'vue'
+﻿import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import { analyticsApi, type SummaryData, type DashboardData, type TrendsData } from '@/services/api'
 import { getApiErrorMessage } from '@/services/errors'
+
+type DomainStatus = {
+  loading: boolean
+  error: string | null
+}
 
 export const useAnalyticsStore = defineStore('analytics', () => {
   const summary = ref<SummaryData | null>(null)
   const dashboard = ref<DashboardData | null>(null)
   const trends = ref<TrendsData | null>(null)
-  const loading = ref(false)
-  const error = ref<string | null>(null)
+
   const calorieTarget = ref(2000)
 
+  const dashboardStatus = reactive<DomainStatus>({ loading: false, error: null })
+  const summaryStatus = reactive<DomainStatus>({ loading: false, error: null })
+  const trendsStatus = reactive<DomainStatus>({ loading: false, error: null })
+
+  const dashboardPageError = computed(() => {
+    if (!dashboard.value && dashboardStatus.error) return dashboardStatus.error
+    if (!summary.value && summaryStatus.error) return summaryStatus.error
+    return null
+  })
+
+  const analysisPageError = computed(() => {
+    if (!summary.value && summaryStatus.error) return summaryStatus.error
+    return null
+  })
+
+  async function fetchDashboard() {
+    dashboardStatus.loading = true
+    dashboardStatus.error = null
+    try {
+      const res = await analyticsApi.dashboard()
+      dashboard.value = res.data
+    } catch (e: unknown) {
+      dashboardStatus.error = getApiErrorMessage(e, 'Failed to fetch dashboard')
+    } finally {
+      dashboardStatus.loading = false
+    }
+  }
+
   async function fetchTrends(days: number = 30) {
-    loading.value = true
+    trendsStatus.loading = true
+    trendsStatus.error = null
     try {
       const res = await analyticsApi.trends(days)
       trends.value = res.data
     } catch (e: unknown) {
-      error.value = getApiErrorMessage(e, 'Failed to fetch trends')
+      trendsStatus.error = getApiErrorMessage(e, 'Failed to fetch trends')
     } finally {
-      loading.value = false
+      trendsStatus.loading = false
     }
   }
 
-  async function fetchAll(days: number = 30, target: number = 2000) {
-    loading.value = true
-    error.value = null
+  // Explicit domain-boundary aliases (preferred API)
+  async function fetchTrendsOnly(days: number = 30) {
+    await fetchTrends(days)
+  }
+
+  async function fetchDashboardBundle(days: number = 30, target: number = 2000) {
+    calorieTarget.value = target
+
+    dashboardStatus.loading = true
+    summaryStatus.loading = true
+    trendsStatus.loading = true
+
+    dashboardStatus.error = null
+    summaryStatus.error = null
+    trendsStatus.error = null
+
+    const [summaryRes, dashboardRes, trendsRes] = await Promise.allSettled([
+      analyticsApi.summary(target),
+      analyticsApi.dashboard(),
+      analyticsApi.trends(days),
+    ])
+
+    if (summaryRes.status === 'fulfilled') {
+      summary.value = summaryRes.value.data
+    } else {
+      summaryStatus.error = getApiErrorMessage(summaryRes.reason, 'Failed to fetch analysis summary')
+    }
+
+    if (dashboardRes.status === 'fulfilled') {
+      dashboard.value = dashboardRes.value.data
+    } else {
+      dashboardStatus.error = getApiErrorMessage(dashboardRes.reason, 'Failed to fetch dashboard')
+    }
+
+    if (trendsRes.status === 'fulfilled') {
+      trends.value = trendsRes.value.data
+    } else {
+      trendsStatus.error = getApiErrorMessage(trendsRes.reason, 'Failed to fetch trends')
+    }
+
+    dashboardStatus.loading = false
+    summaryStatus.loading = false
+    trendsStatus.loading = false
+  }
+
+  async function fetchAnalysisBundle(target: number = 2000) {
+    // Analysis bundle = summary endpoint (includes plateau + reasons + summary payload).
+    summaryStatus.loading = true
+    summaryStatus.error = null
     calorieTarget.value = target
     try {
-      const [summaryRes, dashboardRes, trendsRes] = await Promise.all([
-        analyticsApi.summary(target),
-        analyticsApi.dashboard(),
-        analyticsApi.trends(days),
-      ])
-      summary.value = summaryRes.data
-      dashboard.value = dashboardRes.data
-      trends.value = trendsRes.data
+      const res = await analyticsApi.summary(target)
+      summary.value = res.data
     } catch (e: unknown) {
-      error.value = getApiErrorMessage(e, 'Failed to fetch analytics data')
+      summaryStatus.error = getApiErrorMessage(e, 'Failed to fetch analysis summary')
     } finally {
-      loading.value = false
+      summaryStatus.loading = false
     }
   }
 
-  // Flattened Analysis Fields for simplified UI consumption
   const summaryText = computed(() => summary.value?.summary?.text || '')
-  const summaryStatus = computed(() => summary.value?.summary?.status || 'insufficient_data')
+  const analysisResultStatus = computed(() => summary.value?.summary?.status || 'insufficient_data')
   const summaryInsight = computed(() => summary.value?.summary?.insight || '')
   const topReasons = computed(() => summary.value?.summary?.top_reasons || [])
   const plateauStatus = computed(() => summary.value?.plateau?.status || 'insufficient_data')
 
-  // Data Domains
   const plateauData = computed(() => summary.value?.plateau)
   const reasonsData = computed(() => summary.value?.reasons)
   const dashboardData = computed(() => dashboard.value)
   const trendsData = computed(() => trends.value)
 
   return {
-    // UI State
-    loading,
-    error,
     calorieTarget,
-    // Raw domains (for views that need full objects)
     summary,
     dashboard,
     trends,
-    // Analysis Domain (Flattened)
-    summaryText,
+
+    dashboardStatus,
     summaryStatus,
+    trendsStatus,
+    dashboardPageError,
+    analysisPageError,
+
+    summaryText,
+    analysisResultStatus,
     summaryInsight,
     topReasons,
     plateauStatus,
-    // Data Domains
+
     plateauData,
     reasonsData,
     dashboardData,
     trendsData,
-    // Actions
-    fetchAll,
-    fetchTrends,
+
+    fetchDashboard,
+    fetchTrendsOnly,
+    fetchDashboardBundle,
+    fetchAnalysisBundle,
+
+    fetchAll: fetchDashboardBundle,
   }
 })

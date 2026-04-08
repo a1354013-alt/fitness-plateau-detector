@@ -12,6 +12,8 @@ Returned object shape (consumed by frontend):
 
 from __future__ import annotations
 
+from app.schemas.analytics import PlateauResponse, ReasonsResponse, ReasonItem, SummaryPayload
+
 
 STATUS_MESSAGES: dict[str, str] = {
     "plateau": "Your weight appears to be in a plateau based on recent trends.",
@@ -30,13 +32,13 @@ REASON_ACTIONS: dict[str, str] = {
 }
 
 
-def _format_reason_line(idx: int, reason: dict) -> str:
+def _format_reason_line(idx: int, reason: ReasonItem) -> str:
     rank = "Main" if idx == 0 else "Secondary"
-    label = reason.get("label") or reason.get("code") or "Unknown"
-    details = reason.get("details") or {}
+    label = reason.label or reason.code or "Unknown"
+    details = reason.details or {}
 
     suffix = ""
-    code = reason.get("code")
+    code = reason.code
     if code == "SleepIssue" and details.get("avg_sleep") is not None:
         suffix = f" (avg {details['avg_sleep']:.1f}h)"
     elif code == "CalorieIssue" and details.get("avg_calories") is not None:
@@ -51,26 +53,26 @@ def _format_reason_line(idx: int, reason: dict) -> str:
     return f"{rank} factor: {label}{suffix}."
 
 
-def generate_summary(plateau_result: dict, reason_result: dict) -> dict:
-    status = plateau_result.get("status") or "insufficient_data"
-    reasons: list[dict] = list(reason_result.get("reasons") or [])
+def generate_summary(plateau_result: PlateauResponse, reason_result: ReasonsResponse) -> SummaryPayload:
+    status = plateau_result.status or "insufficient_data"
+    reasons: list[ReasonItem] = list(reason_result.reasons or [])
 
     status_sentence = STATUS_MESSAGES.get(status, STATUS_MESSAGES["insufficient_data"])
 
     parts: list[str] = []
 
     # Data reliability / insufficient-data messages first
-    if reason_result.get("status") == "insufficient_data":
-        parts.append(reason_result.get("message") or "Not enough recent data to analyze reasons yet.")
-    elif plateau_result.get("status") == "insufficient_data":
-        parts.append(plateau_result.get("message") or "Not enough recent data to detect plateau yet.")
-    elif any(r.get("code") == "DataMissing" for r in reasons):
+    if reason_result.status == "insufficient_data":
+        parts.append(reason_result.message or "Not enough recent data to analyze reasons yet.")
+    elif plateau_result.status == "insufficient_data":
+        parts.append(plateau_result.message or "Not enough recent data to detect plateau yet.")
+    elif any(r.code == "DataMissing" for r in reasons):
         parts.append("Some recent days are missing — results may be less reliable.")
 
     parts.append(status_sentence)
 
     # Add top reasons when analysis is reliable
-    if status != "insufficient_data" and reason_result.get("status") != "insufficient_data":
+    if status != "insufficient_data" and reason_result.status != "insufficient_data":
         for idx, reason in enumerate(reasons[:2]):
             parts.append(_format_reason_line(idx, reason))
 
@@ -79,7 +81,7 @@ def generate_summary(plateau_result: dict, reason_result: dict) -> dict:
     # Build detailed insight
     action_lines: list[str] = []
     for reason in reasons[:2]:
-        code = reason.get("code")
+        code = reason.code
         action = REASON_ACTIONS.get(code)
         if action:
             action_lines.append(f"- {action}")
@@ -94,9 +96,9 @@ def generate_summary(plateau_result: dict, reason_result: dict) -> dict:
         else:
             insight_text = "Recommended actions:\n- Focus on consistency for the next week and review again."
 
-    return {
-        "text": summary_text,
-        "insight": insight_text,
-        "status": status,
-        "top_reasons": [r.get("code") for r in reasons],
-    }
+    return SummaryPayload(
+        text=summary_text,
+        insight=insight_text,
+        status=status,
+        top_reasons=[r.code for r in reasons],
+    )

@@ -1,0 +1,8 @@
+{
+  "name": "js-beautify",
+  "version": "1.15.4",
+  "description": "Local shim used for deterministic test dependency tree (no glob).",
+  "main": "index.js",
+  "license": "MIT"
+}
+

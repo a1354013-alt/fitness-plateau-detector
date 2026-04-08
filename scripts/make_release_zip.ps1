@@ -19,17 +19,25 @@ function Copy-Tree([string]$Source, [string]$Dest) {
     "node_modules",
     "dist",
     "dist-ssr",
+    ".npm-cache",
     "__pycache__",
     ".venv",
     "venv",
-    "backend\\data",
+    "data",
+    "tests",
     "release",
     "release_tmp",
     ".vscode",
     ".idea",
     ".git"
   )
-  $excludeFiles = @("*.pyc", "*.pyo", "*.pyd", "*.db", "*.sqlite", "*.sqlite3", ".env", ".env.*")
+  $excludeFiles = @(
+    "*.pyc", "*.pyo", "*.pyd",
+    "*.db", "*.sqlite", "*.sqlite3",
+    ".env", ".env.*",
+    "requirements-dev.txt",
+    "pytest.ini"
+  )
 
   $xdArgs = @()
   foreach ($d in $excludeDirs) { $xdArgs += @("/XD", $d) }
@@ -49,6 +57,19 @@ function Copy-Tree([string]$Source, [string]$Dest) {
   }
 }
 
+function Copy-ExactDir([string]$Source, [string]$Dest) {
+  if (!(Test-Path -LiteralPath $Source)) {
+    throw "Missing required directory: $Source"
+  }
+
+  New-Item -ItemType Directory -Path $Dest -Force | Out-Null
+  $args = @($Source, $Dest, "/E", "/NFL", "/NDL", "/NJH", "/NJS", "/NP")
+  $rc = (Start-Process -FilePath "robocopy.exe" -ArgumentList $args -Wait -PassThru).ExitCode
+  if ($rc -gt 1) {
+    throw "robocopy failed with exit code $rc"
+  }
+}
+
 $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 Ensure-EmptyDir -Path $OutDir
 
@@ -56,12 +77,15 @@ $tmp = ".\\release_tmp"
 Ensure-EmptyDir -Path $tmp
 
 Copy-Tree -Source ".\\backend" -Dest (Join-Path $tmp "backend")
-Copy-Tree -Source ".\\frontend" -Dest (Join-Path $tmp "frontend")
+
+# Package frontend build output only (for deployable release).
+$dist = ".\\frontend\\dist"
+if (!(Test-Path -LiteralPath $dist)) {
+  throw "Missing frontend build output ($dist). Run: cd frontend; npm ci; npm run build"
+}
+Copy-ExactDir -Source $dist -Dest (Join-Path $tmp "frontend\\dist")
 
 Copy-Item -LiteralPath ".\\README.md" -Destination (Join-Path $tmp "README.md") -Force
-Copy-Item -LiteralPath ".\\PlateauBreaker_Technical_Guide.md" -Destination (Join-Path $tmp "PlateauBreaker_Technical_Guide.md") -Force
-Copy-Item -LiteralPath ".\\.gitignore" -Destination (Join-Path $tmp ".gitignore") -Force
-Copy-Item -LiteralPath ".\\.dockerignore" -Destination (Join-Path $tmp ".dockerignore") -Force
 
 $zipPath = Join-Path $OutDir ("PlateauBreaker_release_{0}.zip" -f $timestamp)
 if (Test-Path -LiteralPath $zipPath) { Remove-Item -Force -LiteralPath $zipPath }

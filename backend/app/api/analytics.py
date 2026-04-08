@@ -86,8 +86,7 @@ def get_trends(
 def get_plateau(session: Session = Depends(get_session)):
     """Detect current plateau status."""
     all_records = svc.get_all_records_ordered(session)
-    result = detect_plateau(all_records, anchor_date=date.today())
-    return PlateauResponse.model_validate(result)
+    return detect_plateau(all_records, anchor_date=date.today())
 
 
 @router.get("/reasons", response_model=ReasonsResponse)
@@ -97,8 +96,7 @@ def get_reasons(
 ):
     """Analyse reasons for weight plateau."""
     all_records = svc.get_all_records_ordered(session)
-    result = analyze_reasons(all_records, calorie_target, anchor_date=date.today())
-    return ReasonsResponse.model_validate(result)
+    return analyze_reasons(all_records, calorie_target, anchor_date=date.today())
 
 
 @router.get("/summary", response_model=SummaryResponse)
@@ -112,6 +110,4 @@ def get_summary(
     reason_result = analyze_reasons(all_records, calorie_target, anchor_date=date.today())
     summary = generate_summary(plateau_result, reason_result)
 
-    return SummaryResponse.model_validate(
-        {"plateau": plateau_result, "reasons": reason_result, "summary": summary}
-    )
+    return SummaryResponse(plateau=plateau_result, reasons=reason_result, summary=summary)

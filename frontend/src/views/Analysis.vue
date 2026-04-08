@@ -16,22 +16,29 @@
           :inputStyle="{ width: '100px', textAlign: 'center' }"
           @blur="refresh"
         />
-        <Button icon="pi pi-refresh" @click="refresh" :loading="loading" severity="secondary" text rounded />
+        <Button
+          icon="pi pi-refresh"
+          @click="refresh"
+          :loading="analyticsStore.summaryStatus.loading"
+          severity="secondary"
+          text
+          rounded
+        />
       </div>
     </div>
 
     <StatePanel
-      v-if="loading && analyticsStore.summary == null"
+      v-if="analyticsStore.summaryStatus.loading && analyticsStore.summary == null"
       variant="loading"
       title="Analyzing..."
-      message="Running plateau detection and reason analysis (last 7 days)."
+      message="Running plateau detection and reason analysis (last 7 calendar days, ending today)."
     />
 
     <StatePanel
-      v-else-if="analyticsStore.error"
+      v-else-if="pageError"
       variant="error"
       title="Couldn't load analysis"
-      :message="analyticsStore.error"
+      :message="pageError"
     >
       <template #action>
         <Button label="Retry" icon="pi pi-refresh" severity="secondary" outlined @click="refresh" />
@@ -224,8 +231,8 @@ const calorieTarget = computed<number | null>({
   },
 })
 
-const loading = computed(() => analyticsStore.loading)
 const plateauStatus = computed(() => analyticsStore.plateauStatus)
+const pageError = computed(() => analyticsStore.analysisPageError)
 
 const statusEmoji = computed(() => {
   const map: Record<string, string> = {
@@ -248,7 +255,7 @@ const statusTitle = computed(() => {
 })
 
 async function refresh() {
-  await analyticsStore.fetchAll(30, calorieTarget.value ?? 2000)
+  await analyticsStore.fetchAnalysisBundle(calorieTarget.value ?? 2000)
 }
 
 onMounted(async () => {

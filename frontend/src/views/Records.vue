@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="page-container">
     <div class="page-header-row">
       <div>
@@ -252,8 +252,8 @@ const rows = computed(() => store.query.limit)
 const pageRangeText = computed(() => {
   if (store.total === 0) return 'No records'
   const start = Math.min(store.query.skip + 1, store.total)
-  const end = Math.min(store.query.skip + store.records.length, store.total)
-  return `Showing ${start}–${end} of ${store.total}`
+  const end = Math.min(store.query.skip + store.query.limit, store.total)
+  return `Showing ${start}-${end} of ${store.total}`
 })
 
 const showForm = ref(false)

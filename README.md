@@ -23,6 +23,22 @@ PlateauBreaker is a small full-stack app for logging daily health metrics and de
 - Node.js + npm (for the frontend)
 - Python 3.11+ (for the backend)
 
+### Node version (required for reproducible installs)
+
+- This repo pins Node via `D:\\git\\plateau-breaker\\.nvmrc` (`20.19.0`).
+- If you use asdf, you can use `D:\\git\\plateau-breaker\\.tool-versions`.
+- The frontend also declares `engines.node` in `D:\\git\\plateau-breaker\\frontend\\package.json`.
+- Use Node 20.19+ to avoid lockfile drift and ensure `npm ci` works in a clean environment.
+- The frontend enforces this via `D:\\git\\plateau-breaker\\frontend\\.npmrc` (`engine-strict=true`), so `npm ci` fails fast on the wrong Node version.
+
+#### Example (nvm)
+
+```powershell
+nvm install 20.19.0
+nvm use 20.19.0
+node -v
+```
+
 ## Quick start (local)
 
 ### 1) Backend
@@ -55,6 +71,8 @@ npm run build
 
 Build output is `frontend/dist/`.
 
+Note: the frontend ships with `frontend/.npmrc` to keep the npm cache inside `frontend/.npm-cache`. This avoids relying on a global user cache in restricted environments; the cache is safe to delete and excluded from commits/releases.
+
 ## Tests
 
 ### Backend
@@ -74,6 +92,11 @@ npm ci
 npm test
 ```
 
+## CI (recommended)
+
+- GitHub Actions workflow: `D:\\git\\plateau-breaker\\.github\\workflows\\ci.yml`
+- Runs frontend `npm ci`, `npm test -- --run`, `npm run build` using Node 20 (from `.nvmrc`), plus backend `pytest -q` on Python 3.11.
+
 ## Seed data (optional)
 
 If you want sample records in your local SQLite database:
@@ -91,6 +114,10 @@ If the database already has records, the seed script exits without modifying dat
 - Dashboard shows an empty state prompting you to add records.
 - Analysis requires **at least 5 recorded days within the last 7 calendar days (ending today)** to return meaningful results.
 
+## KPI definitions (quick reference)
+
+- `weight_change_7d`: only available when you have a record for **today** and **exactly 7 days ago**; otherwise it is `null`.
+
 ## Configuration (env vars)
 
 ### Backend
@@ -107,9 +134,25 @@ If the database already has records, the seed script exits without modifying dat
 
 ## Packaging a clean delivery zip
 
-This repo contains a helper script to create a clean release zip (excluding `.git`, `node_modules`, `dist`, caches, venvs, and local DB files):
+This repo contains a helper script to create a clean release zip.
+
+Release contents (deployable):
+- `backend/` (source, excludes `backend/tests` and local `backend/data`)
+- `frontend/dist/` (production build output)
+- `README.md`
 
 ```powershell
+# Optional: clean local build artifacts first
+powershell -ExecutionPolicy Bypass -File .\scripts\clean_artifacts.ps1
+
+powershell -ExecutionPolicy Bypass -File .\scripts\clean_artifacts.ps1 -All
+
+# Build frontend first (required for packaging)
+cd frontend
+npm ci
+npm run build
+cd ..
+
 powershell -ExecutionPolicy Bypass -File .\scripts\make_release_zip.ps1
 ```
 

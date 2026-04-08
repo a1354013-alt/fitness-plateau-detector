@@ -31,9 +31,9 @@ def test_plateau_detects_plateau_with_stable_weight():
     records = _make_records(start, 14, weight=75.0)
     result = detect_plateau(records)
 
-    assert result["status"] == "plateau"
-    assert result["rule_b"] is True
-    assert result["rule_a"] is True
+    assert result.status == "plateau"
+    assert result.rule_b is True
+    assert result.rule_a is True
 
 
 def test_plateau_insufficient_with_too_few_recent_days():
@@ -41,7 +41,6 @@ def test_plateau_insufficient_with_too_few_recent_days():
     records = _make_records(start, 4, weight=75.0)
     result = detect_plateau(records)
 
-    assert result["status"] == "insufficient_data"
-    assert result["rule_a"] is None
-    assert result["rule_b"] is None
-
+    assert result.status == "insufficient_data"
+    assert result.rule_a is None
+    assert result.rule_b is None

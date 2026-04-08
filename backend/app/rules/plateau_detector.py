@@ -26,6 +26,7 @@ from typing import Literal
 
 from app.models.health_record import HealthRecord
 from app.rules.constants import WINDOW_DAYS, MIN_RECENT_DAYS
+from app.schemas.analytics import PlateauResponse
 
 
 PlateauStatus = Literal["losing", "plateau", "gaining", "insufficient_data"]
@@ -34,7 +35,7 @@ AVG_CHANGE_PLATEAU_THRESHOLD_KG = 0.2
 FLUCTUATION_PLATEAU_BAND_KG = 0.3  # ±0.3 kg
 
 
-def detect_plateau(records: list[HealthRecord], *, anchor_date: date | None = None) -> dict:
+def detect_plateau(records: list[HealthRecord], *, anchor_date: date | None = None) -> PlateauResponse:
     """Return plateau status + diagnostic metrics.
 
     - records must be sorted by record_date ascending.
@@ -42,19 +43,19 @@ def detect_plateau(records: list[HealthRecord], *, anchor_date: date | None = No
     """
 
     if not records:
-        return {
-            "status": "insufficient_data",
-            "message": "No data available for plateau detection.",
-            "rule_a": None,
-            "rule_b": None,
-            "last7_avg": None,
-            "prev7_avg": None,
-            "avg_change": None,
-            "last7_fluctuation": None,
-            "last7_min": None,
-            "last7_max": None,
-            "data_completeness": 0.0,
-        }
+        return PlateauResponse(
+            status="insufficient_data",
+            message="No data available for plateau detection.",
+            rule_a=None,
+            rule_b=None,
+            last7_avg=None,
+            prev7_avg=None,
+            avg_change=None,
+            last7_fluctuation=None,
+            last7_min=None,
+            last7_max=None,
+            data_completeness=0.0,
+        )
 
     anchor = anchor_date or records[-1].record_date
 
@@ -67,22 +68,22 @@ def detect_plateau(records: list[HealthRecord], *, anchor_date: date | None = No
 
     data_completeness = len(last7) / float(WINDOW_DAYS)
     if len(last7) < MIN_RECENT_DAYS:
-        return {
-            "status": "insufficient_data",
-            "message": (
+        return PlateauResponse(
+            status="insufficient_data",
+            message=(
                 f"Need at least {MIN_RECENT_DAYS} days of records in the last {WINDOW_DAYS} days "
                 "for plateau detection."
             ),
-            "rule_a": None,
-            "rule_b": None,
-            "last7_avg": None,
-            "prev7_avg": None,
-            "avg_change": None,
-            "last7_fluctuation": None,
-            "last7_min": None,
-            "last7_max": None,
-            "data_completeness": data_completeness,
-        }
+            rule_a=None,
+            rule_b=None,
+            last7_avg=None,
+            prev7_avg=None,
+            avg_change=None,
+            last7_fluctuation=None,
+            last7_min=None,
+            last7_max=None,
+            data_completeness=data_completeness,
+        )
 
     last_weights = [r.weight for r in last7]
     last_avg = sum(last_weights) / len(last_weights)
@@ -125,23 +126,23 @@ def detect_plateau(records: list[HealthRecord], *, anchor_date: date | None = No
             direction = last_weights[-1] - last_weights[0]
             status = "losing" if direction < 0 else "gaining"
 
-    result = {
-        "status": status,
-        "rule_a": rule_a,
-        "rule_b": rule_b,
-        "last7_avg": round(last_avg, 2),
-        "prev7_avg": round(prev_avg, 2) if prev_avg is not None else None,
-        "avg_change": round(avg_change, 2) if avg_change is not None else None,
-        "last7_fluctuation": round(last_fluctuation, 2),
-        "last7_min": round(last_min, 2),
-        "last7_max": round(last_max, 2),
-        "data_completeness": data_completeness,
-    }
-
+    message = None
     if data_completeness < 1.0 and status != "insufficient_data":
-        result["message"] = (
+        message = (
             f"Analysis based on {len(last7)}/{WINDOW_DAYS} days of data. "
             "Confidence reduced due to missing days."
         )
 
-    return result
+    return PlateauResponse(
+        status=status,
+        rule_a=rule_a,
+        rule_b=rule_b,
+        last7_avg=round(last_avg, 2),
+        prev7_avg=round(prev_avg, 2) if prev_avg is not None else None,
+        avg_change=round(avg_change, 2) if avg_change is not None else None,
+        last7_fluctuation=round(last_fluctuation, 2),
+        last7_min=round(last_min, 2),
+        last7_max=round(last_max, 2),
+        data_completeness=data_completeness,
+        message=message,
+    )

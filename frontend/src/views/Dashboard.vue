@@ -6,20 +6,33 @@
     </div>
 
     <StatePanel
-      v-if="analyticsStore.loading && analyticsStore.summary == null"
+      v-if="initialLoading"
       variant="loading"
       title="Loading dashboard..."
       message="Fetching your latest records and analytics."
     />
 
     <StatePanel
-      v-else-if="analyticsStore.error"
+      v-else-if="pageError"
       variant="error"
       title="Couldn't load dashboard"
-      :message="analyticsStore.error"
+      :message="pageError"
     >
       <template #action>
         <Button label="Retry" icon="pi pi-refresh" severity="secondary" outlined @click="refreshAll" />
+      </template>
+    </StatePanel>
+
+    <StatePanel
+      v-else-if="isEmpty"
+      variant="empty"
+      title="No records yet"
+      message="Add records to see KPIs and trends. Analysis unlocks after 5 recorded days within the last 7 days."
+    >
+      <template #action>
+        <router-link to="/records">
+          <Button label="Add Records" icon="pi pi-plus" />
+        </router-link>
       </template>
     </StatePanel>
 
@@ -76,7 +89,7 @@
         <span class="banner-status-icon">{{ statusIcon }}</span>
         <div>
           <div class="banner-title">{{ statusTitle }}</div>
-          <div class="banner-desc">{{ summaryText }} <span class="text-muted">(based on last 7 days)</span></div>
+          <div class="banner-desc">{{ summaryText }} <span class="text-muted">(based on last 7 calendar days, ending today)</span></div>
         </div>
       </div>
       <router-link to="/analysis" class="banner-cta">
@@ -105,7 +118,20 @@
         </div>
         <div class="chart-wrap">
           <Line v-if="weightChartData.labels.length" :data="weightChartData" :options="lineOptions" />
-          <div v-else class="chart-empty">No data available</div>
+          <div v-else class="chart-empty">
+            <span v-if="analyticsStore.trendsStatus.error">Failed to load charts.</span>
+            <span v-else>No data available</span>
+            <Button
+              v-if="analyticsStore.trendsStatus.error"
+              label="Retry"
+              icon="pi pi-refresh"
+              severity="secondary"
+              text
+              size="small"
+              @click="analyticsStore.fetchTrendsOnly(selectedDays)"
+              style="margin-left: 8px;"
+            />
+          </div>
         </div>
       </div>
 
@@ -119,7 +145,10 @@
         </div>
         <div class="chart-wrap">
           <Line v-if="sleepChartData.labels.length" :data="sleepChartData" :options="sleepOptions" />
-          <div v-else class="chart-empty">No data available</div>
+          <div v-else class="chart-empty">
+            <span v-if="analyticsStore.trendsStatus.error">Failed to load charts.</span>
+            <span v-else>No data available</span>
+          </div>
         </div>
       </div>
 
@@ -133,7 +162,10 @@
         </div>
         <div class="chart-wrap">
           <Bar v-if="caloriesChartData.labels.length" :data="caloriesChartData" :options="barOptions" />
-          <div v-else class="chart-empty">No data available</div>
+          <div v-else class="chart-empty">
+            <span v-if="analyticsStore.trendsStatus.error">Failed to load charts.</span>
+            <span v-else>No data available</span>
+          </div>
         </div>
       </div>
     </div>
@@ -197,6 +229,13 @@ const trendsData = computed(() => analyticsStore.trends?.trends || [])
 const summary = computed(() => analyticsStore.summary)
 const summaryText = computed(() => analyticsStore.summaryText)
 const plateauStatus = computed(() => analyticsStore.plateauStatus)
+const initialLoading = computed(() => {
+  const needsData = analyticsStore.dashboard == null || analyticsStore.summary == null
+  const loading = analyticsStore.dashboardStatus.loading || analyticsStore.summaryStatus.loading
+  return needsData && loading
+})
+const pageError = computed(() => analyticsStore.dashboardPageError)
+const isEmpty = computed(() => dashboard.value != null && dashboard.value.total_records === 0)
 
 const statusIcon = computed(() => {
   const map: Record<string, string> = {
@@ -222,7 +261,8 @@ const weightChangeSub = computed(() => {
   const asOf = dashboard.value?.last_record_date ? `As of ${dashboard.value.last_record_date}` : undefined
   const c = dashboard.value?.weight_change_7d
   if (c === null || c === undefined) {
-    return asOf ? `${asOf} · 7-day change unavailable` : '7-day change unavailable'
+    const hint = '7-day change unavailable (needs records for today and exactly 7 days ago)'
+    return asOf ? `${asOf} · ${hint}` : hint
   }
   const sign = c > 0 ? '+' : ''
   return asOf ? `${asOf} · ${sign}${c.toFixed(1)} kg vs 7 days ago` : `${sign}${c.toFixed(1)} kg vs 7 days ago`
@@ -332,11 +372,11 @@ const barOptions = { ...baseOptions }
 
 async function changeDays(days: number) {
   selectedDays.value = days
-  await analyticsStore.fetchTrends(days)
+  await analyticsStore.fetchTrendsOnly(days)
 }
 
 async function refreshAll() {
-  await analyticsStore.fetchAll(selectedDays.value, calorieTarget.value)
+  await analyticsStore.fetchDashboardBundle(selectedDays.value, calorieTarget.value)
 }
 
 onMounted(async () => {

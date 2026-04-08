@@ -77,12 +77,12 @@ export interface PlateauData {
   rule_b: boolean | null
   last7_avg: number | null
   prev7_avg: number | null
-  avg_change?: number | null
+  avg_change: number | null
   last7_fluctuation: number | null
   last7_min: number | null
   last7_max: number | null
-  data_completeness?: number
-  message?: string
+  data_completeness: number | null
+  message: string | null
 }
 
 export interface ReasonItem {
@@ -97,7 +97,7 @@ export interface ReasonItem {
 
 export interface ReasonsData {
   status: 'ok' | 'insufficient_data'
-  message?: string
+  message: string | null
   reasons: ReasonItem[]
   all_reasons: ReasonItem[]
   data_points: number
