@@ -1,0 +1,45 @@
+# General
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.swp
+
+# IDE / editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Node (frontend)
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# Python (backend)
+__pycache__/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Local env/config
+.env
+.env.*
+
+# Local databases / runtime data (override via env if needed)
+backend/data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Release artifacts
+release/
+release_tmp/

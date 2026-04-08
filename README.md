@@ -1,295 +1,122 @@
-# Plateau Breaker
+﻿# PlateauBreaker
 
-A full-stack health tracking and weight plateau detection system built with **FastAPI** and **Vue 3**.  
-This application helps users monitor daily fitness data, detect weight loss plateaus, analyze possible causes, and generate actionable insights through interactive dashboards.
+PlateauBreaker is a small full-stack app for logging daily health metrics and detecting weight plateaus.
 
----
+- Backend: FastAPI + SQLModel (SQLite)
+- Frontend: Vue 3 + PrimeVue + Pinia + Chart.js
 
-# 📌 Project Overview
+## Core features
 
-**Plateau Breaker** is a full-stack web application designed to help users track their daily health metrics and identify weight loss plateaus.
+- Record daily metrics: weight, sleep, calories, protein, exercise, steps, notes
+- Dashboard KPIs (7-day averages) + trend charts (7/14/30 days)
+- Plateau analysis (rules evaluated on the last 7 days)
+- Cause analysis (top factors evaluated on the last 7 days)
 
-Instead of simply recording data, the system performs rule-based analysis on recent trends to detect:
+## Repository layout
 
-- Weight plateau patterns
-- Lifestyle-related causes
-- Behavioral insights
-- Actionable recommendations
+- `backend/`: FastAPI service (serves `/api/...`)
+- `frontend/`: Vue app (Vite dev server + production build)
+- `PlateauBreaker_Technical_Guide.md`: API + rules + data flow
 
-This project demonstrates:
+## Prerequisites
 
-- Full-stack system design
-- RESTful API architecture
-- Data analysis logic
-- State management
-- Interactive data visualization
+- Node.js + npm (for the frontend)
+- Python 3.11+ (for the backend)
 
----
+## Quick start (local)
 
-# 🧠 Core Features
+### 1) Backend
 
-## 📊 Health Data Tracking
-
-Users can record daily health metrics:
-
-- Weight
-- Sleep Hours
-- Calories
-- Protein Intake
-- Exercise Minutes
-- Steps
-- Notes
-
-Supports:
-
-- Create records
-- Edit records
-- Delete records
-- Pagination and filtering
-
----
-
-## 📉 Plateau Detection Engine
-
-The system analyzes weight trends to detect plateaus.
-
-Detection rules include:
-
-- **Rule A:**  
-  Compare average weight of recent 7 days vs previous 7 days
-
-- **Rule B:**  
-  Detect low fluctuation range over recent days
-
-Possible outcomes:
-
-- Plateau
-- Losing weight
-- Gaining weight
-- Insufficient data
-
----
-
-## 🔍 Cause Analysis
-
-When a plateau is detected, the system evaluates:
-
-- Sleep quality
-- Calorie intake trends
-- Weekend eating patterns
-- Exercise consistency
-- Data completeness
-
-Top causes are ranked by severity.
-
----
-
-## 💡 Insight Generation
-
-The system generates:
-
-- Status summaries
-- Behavioral insights
-- Suggested actions
-
-Example:
-
-- Increase sleep consistency
-- Reduce calorie intake
-- Maintain exercise routine
-
----
-
-## 📈 Interactive Dashboard
-
-Includes:
-
-- KPI summary cards
-- Weight trend charts
-- Sleep charts
-- Calorie charts
-- Plateau alerts
-
-Built using:
-
-- Chart.js
-- PrimeVue UI components
-
----
-
-# 🏗️ System Architecture
-Frontend (Vue 3)
-|
-| REST API
-|
-Backend (FastAPI)
-|
-| ORM
-|
-Database (SQLite)
-
-
----
-
-# 🧰 Tech Stack
-
-## Backend
-
-- FastAPI
-- SQLModel
-- SQLite
-- Pydantic
-- Python
-
-## Frontend
-
-- Vue 3
-- Vite
-- Pinia
-- PrimeVue
-- Chart.js
-- Axios
-
-## Development Tools
-
-- TypeScript
-- ESLint
-- Prettier
-
----
-
-# 📂 Project Structure
-PlateauBreaker/
-
-├── backend/
-│ ├── app/
-│ │ ├── main.py
-│ │ ├── models/
-│ │ ├── schemas/
-│ │ ├── routers/
-│ │ ├── services/
-│ │ └── rules/
-│ │
-│ └── requirements.txt
-│
-├── frontend/
-│ ├── src/
-│ │ ├── views/
-│ │ ├── stores/
-│ │ ├── services/
-│ │ └── components/
-│ │
-│ └── package.json
-│
-└── README.md
-
----
-
-# 🚀 Getting Started
-
-## 1️⃣ Clone Repository
-
-```bash
-git clone https://github.com/a1354013-alt/plateau-breaker
-
-cd plateau-breaker
-
-
----
-
-# 🚀 Getting Started
-
-## 1️⃣ Clone Repository
-
-```bash
-git clone https://github.com/YOUR_USERNAME/plateau-breaker.git
-
-cd plateau-breaker
-
+```powershell
 cd backend
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
 
-python -m venv venv
+### 2) Frontend
 
-venv\Scripts\activate     # Windows
+```powershell
+cd frontend
+npm ci
+npm run dev
+```
 
-pip install -r requirements.txt
+The frontend dev server proxies `/api` to `http://localhost:8000` (see `frontend/vite.config.ts`).
 
-uvicorn app.main:app --reload
+## Production build (frontend)
 
-Backend runs at:
+```powershell
+cd frontend
+npm ci
+npm run build
+```
 
-http://localhost:8000
+Build output is `frontend/dist/`.
 
-API docs:
+## Tests
 
-http://localhost:8000/docs
+### Backend
 
-🧩 Key Engineering Highlights
+```powershell
+cd backend
+python -m pip install -r requirements.txt
+python -m pip install -r requirements-dev.txt
+pytest -q
+```
 
-This project demonstrates:
+### Frontend
 
-Full-Stack Integration
-Vue 3 frontend
-FastAPI backend
-RESTful communication
-Shared data models
-Rule-Based Analytics Engine
+```powershell
+cd frontend
+npm ci
+npm test
+```
 
-Includes:
+## Seed data (optional)
 
-Plateau detection logic
-Cause ranking system
-Insight generation
+If you want sample records in your local SQLite database:
 
-This simulates real-world analytical workflows.
+```powershell
+cd backend
+.\.venv\Scripts\Activate.ps1
+python seed_data.py
+```
 
-State Management Design
+If the database already has records, the seed script exits without modifying data.
 
-Uses:
+## What happens with no data?
 
-Pinia store architecture
-Centralized analytics state
-Computed helpers
+- Dashboard shows an empty state prompting you to add records.
+- Analysis requires **at least 5 recorded days within the last 7 calendar days (ending today)** to return meaningful results.
 
-Ensures UI consistency.
+## Configuration (env vars)
 
-Modular Backend Design
+### Backend
 
-Separated into:
+- `PLATEAUBREAKER_DB_PATH`
+  - Optional.
+  - Absolute path, or path relative to `backend/`.
+  - Default: `backend/data/plateaubreaker.sqlite3`.
 
-Models
-Schemas
-Services
-Rules
+- `CORS_ORIGINS`
+  - Optional.
+  - Comma-separated list of allowed origins.
+  - Default: `http://localhost:5173,http://127.0.0.1:5173`.
 
-This improves:
+## Packaging a clean delivery zip
 
-Maintainability
-Scalability
-Testability
-📈 Future Improvements
+This repo contains a helper script to create a clean release zip (excluding `.git`, `node_modules`, `dist`, caches, venvs, and local DB files):
 
-Potential upgrades:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\make_release_zip.ps1
+```
 
-Machine learning-based plateau prediction
-User authentication system
-Cloud database support
-Docker deployment
-Mobile UI support
-Personalized recommendations
-🧠 Why This Project Matters
+The zip is created under `release/`.
 
-Weight plateaus are a common challenge in fitness tracking.
+## Deployment notes (minimum)
 
-This system demonstrates how software engineering and data logic can be combined to:
-
-Detect behavioral patterns
-Identify root causes
-Provide actionable insights
-
-It showcases practical full-stack engineering skills beyond CRUD applications.
-
-📄 License
-
-MIT License
-
+- Serve the frontend (static `dist/`) and run the backend API.
+- Ensure the backend has write access to the SQLite path (or set `PLATEAUBREAKER_DB_PATH`).
+- Configure `CORS_ORIGINS` for your deployed frontend domain(s).
