@@ -30,6 +30,9 @@ FORBIDDEN_SUBSTRINGS = (
 REQUIRED_ENTRIES = (
     "README.md",
     "backend/requirements.txt",
+    "backend/alembic.ini",
+    "backend/alembic/env.py",
+    "backend/alembic/versions/20260409_0001_initial.py",
     "frontend/dist/index.html",
 )
 

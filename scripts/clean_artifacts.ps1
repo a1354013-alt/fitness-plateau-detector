@@ -39,7 +39,7 @@ if ($All) {
 
 # Backend caches
 Get-ChildItem -Recurse -Force -Directory ".\\backend" |
-  Where-Object { $_.Name -eq "__pycache__" } |
+  Where-Object { $_.Name -in @("__pycache__", ".pytest_cache", ".mypy_cache", ".ruff_cache") } |
   ForEach-Object { Remove-IfExists $_.FullName }
 
 # Release artifacts

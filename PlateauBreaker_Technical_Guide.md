@@ -44,6 +44,7 @@ All endpoints under `/analytics/*` have explicit Pydantic response models define
 - The API server can **bootstrap an empty SQLite database** on first run (creates tables only when the DB has no tables).
 - Once the database exists, **schema changes must be applied via Alembic migrations** under `backend/alembic/`.
 - Production deployments should run `alembic upgrade head` before starting the API server.
+- `backend/data/` is the default local SQLite storage area for development/runtime convenience. It is not part of the release artifact.
 
 ## Plateau detection (rules)
 
@@ -78,3 +79,4 @@ Reason codes:
 - `frontend/src/stores/analytics.ts` is the single source of truth for dashboard/analysis state
 - `frontend/src/stores/healthRecords.ts` owns record pagination query state and handles delete-empty-page recovery
 - `frontend/src/components/StatePanel.vue` standardizes loading/error/empty presentation across pages
+- Formal deployable packaging is validated by `scripts/validate_release_zip.py`, which requires deployable files and rejects workspace-only traces such as `.git`, `.vscode`, caches, `backend/tests`, and `backend/data`.

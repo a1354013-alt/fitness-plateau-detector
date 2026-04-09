@@ -49,6 +49,15 @@ npm ci
 npm test
 ```
 
+## CI note
+
+- The repository CI does more than frontend test/build:
+  - frontend `npm ci`
+  - frontend `npm test -- --run`
+  - frontend `npm run build`
+  - release packaging smoke test via `scripts/make_release_zip.py` + `scripts/validate_release_zip.py`
+- Backend tests and migration/release rules are documented in the root `README.md`.
+
 ## Notes
 
 - `frontend/.npmrc` pins the npm cache to `frontend/.npm-cache` (helpful in restricted environments). The cache is safe to delete and is excluded from commits/releases.
