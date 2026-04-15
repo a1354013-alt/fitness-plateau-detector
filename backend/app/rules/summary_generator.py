@@ -1,4 +1,4 @@
-﻿"""app.rules.summary_generator
+"""app.rules.summary_generator
 
 Generates human-readable summary + recommended actions from plateau detection and
 reason analysis results.
@@ -12,8 +12,7 @@ Returned object shape (consumed by frontend):
 
 from __future__ import annotations
 
-from app.schemas.analytics import PlateauResponse, ReasonsResponse, ReasonItem, SummaryPayload
-
+from app.schemas.analytics import PlateauResponse, ReasonItem, ReasonsResponse, SummaryPayload
 
 STATUS_MESSAGES: dict[str, str] = {
     "plateau": "Your weight appears to be in a plateau based on recent trends.",

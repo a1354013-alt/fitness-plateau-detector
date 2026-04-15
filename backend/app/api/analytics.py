@@ -1,16 +1,18 @@
 from datetime import date, timedelta
+
 from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
+
 from app.database import get_session
-from app.services import health_record_service as svc
-from app.rules import detect_plateau, analyze_reasons, generate_summary
+from app.rules import analyze_reasons, detect_plateau, generate_summary
 from app.schemas.analytics import (
     DashboardResponse,
-    TrendsResponse,
     PlateauResponse,
     ReasonsResponse,
     SummaryResponse,
+    TrendsResponse,
 )
+from app.services import health_record_service as svc
 
 router = APIRouter(prefix="/api/analytics", tags=["Analytics"])
 

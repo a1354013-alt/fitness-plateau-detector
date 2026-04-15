@@ -5,8 +5,8 @@ from datetime import date
 import pytest
 from fastapi import HTTPException
 
-from app.services import health_record_service as svc
 from app.schemas.health_record import HealthRecordCreate, HealthRecordUpdate
+from app.services import health_record_service as svc
 
 
 def test_create_get_update_delete_record(session):

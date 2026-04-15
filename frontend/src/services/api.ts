@@ -47,7 +47,7 @@ export interface HealthRecordCreate {
   note?: string
 }
 
-export interface HealthRecordUpdate extends Partial<HealthRecordCreate> {}
+export type HealthRecordUpdate = Partial<HealthRecordCreate>
 
 export interface HealthRecordListResponse {
   total: number

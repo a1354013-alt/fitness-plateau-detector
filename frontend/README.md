@@ -53,6 +53,7 @@ npm test
 
 - The repository CI does more than frontend test/build:
   - frontend `npm ci`
+  - frontend `npm run lint`
   - frontend `npm test -- --run`
   - frontend `npm run build`
   - release packaging smoke test via `scripts/make_release_zip.py` + `scripts/validate_release_zip.py`
@@ -68,7 +69,8 @@ npm test
   - `VITE_API_BASE_URL` (if set)
   - fallback `/api` (keeps Vite dev proxy working)
 - In dev, Vite proxies `/api` to `http://localhost:8000` (see `vite.config.ts`).
-- In production (or when not using the proxy), set `VITE_API_BASE_URL` (see `frontend/.env.example`).
+- In production (or when not using the proxy), copy `frontend/.env.example` to `frontend/.env` and set `VITE_API_BASE_URL`.
+  - Reminder: Vite env vars are **build-time**; restart `npm run dev` or rebuild after changes.
 
 ## State management (high level)
 

@@ -4,13 +4,15 @@ from datetime import date, timedelta
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
+from sqlmodel import Session, SQLModel, create_engine
 
 from app.api.analytics import router as analytics_router
 from app.api.health_records import router as health_records_router
 from app.database import get_session
-from app.models.health_record import HealthRecord  # ensure SQLModel metadata is populated
+from app.models.health_record import (
+    HealthRecord,  # noqa: F401  (ensure SQLModel metadata is populated)
+)
 
 
 def make_client() -> TestClient:

@@ -1,15 +1,15 @@
-from .health_record import (
-    HealthRecordCreate,
-    HealthRecordUpdate,
-    HealthRecordResponse,
-    HealthRecordListResponse,
-)
 from .analytics import (
     DashboardResponse,
-    TrendsResponse,
     PlateauResponse,
     ReasonsResponse,
     SummaryResponse,
+    TrendsResponse,
+)
+from .health_record import (
+    HealthRecordCreate,
+    HealthRecordListResponse,
+    HealthRecordResponse,
+    HealthRecordUpdate,
 )
 
 __all__ = [

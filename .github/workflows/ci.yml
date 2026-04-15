@@ -21,6 +21,10 @@ jobs:
         working-directory: frontend
         run: npm ci --loglevel=error
 
+      - name: Lint
+        working-directory: frontend
+        run: npm run lint
+
       - name: Test
         working-directory: frontend
         run: npm test -- --run
@@ -55,6 +59,18 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt -c constraints.txt
           python -m pip install -r requirements-dev.txt -c constraints.txt
+
+      - name: Lint
+        working-directory: backend
+        run: ruff check .
+
+      - name: Migration smoke test (alembic upgrade head)
+        working-directory: backend
+        env:
+          PLATEAUBREAKER_DB_PATH: ${{ runner.temp }}/plateaubreaker_ci.sqlite3
+        run: |
+          alembic -c alembic.ini upgrade head
+          python -c "from sqlalchemy import inspect; from app.database import engine; assert inspect(engine).get_table_names(), 'No tables created by alembic'"
 
       - name: Run tests
         working-directory: backend

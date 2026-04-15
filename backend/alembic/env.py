@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import sys
 from logging.config import fileConfig
 from pathlib import Path
-import sys
 
-from alembic import context
 from sqlalchemy import engine_from_config, pool
 from sqlmodel import SQLModel
 
+from alembic import context
 
 # Ensure `app.*` imports work when running Alembic from the backend folder.
 backend_dir = Path(__file__).resolve().parents[1]
@@ -16,7 +16,6 @@ if str(backend_dir) not in sys.path:
 
 from app.database import DATABASE_URL, ensure_db_dir_exists  # noqa: E402
 from app.models.health_record import HealthRecord  # noqa: F401,E402
-
 
 config = context.config
 

@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import Generator
 import sys
 from pathlib import Path
+from typing import Generator
 
 import pytest
-from sqlmodel import SQLModel, Session, create_engine
-
+from sqlmodel import Session, SQLModel, create_engine
 
 backend_dir = Path(__file__).resolve().parents[1]
 if str(backend_dir) not in sys.path:

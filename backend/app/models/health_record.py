@@ -1,6 +1,7 @@
-from typing import Optional
 from datetime import date, datetime, timezone
-from sqlmodel import SQLModel, Field
+from typing import Optional
+
+from sqlmodel import Field, SQLModel
 
 
 # All timestamps in the database are stored as UTC naive datetime objects.

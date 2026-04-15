@@ -1,4 +1,4 @@
-﻿"""app.rules.reason_analyzer
+"""app.rules.reason_analyzer
 
 Reason analysis is evaluated over the last 7 calendar days.
 
@@ -22,9 +22,8 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from app.models.health_record import HealthRecord
-from app.rules.constants import WINDOW_DAYS, MIN_RECENT_DAYS
+from app.rules.constants import MIN_RECENT_DAYS, WINDOW_DAYS
 from app.schemas.analytics import ReasonItem, ReasonsResponse
-
 
 # Severity weights for each reason type (normalized to 0-1 scale)
 SEVERITY_WEIGHTS: dict[str, float] = {

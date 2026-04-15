@@ -1,9 +1,19 @@
-﻿<template>
+<template>
   <div class="page-container">
     <div class="page-header">
       <h1 class="page-title">Dashboard</h1>
       <p class="page-subtitle">Your health overview and recent trends</p>
     </div>
+
+    <Message
+      v-if="analyticsStore.staleDataWarning"
+      severity="warn"
+      :closable="true"
+      @close="analyticsStore.dismissStaleDataWarning()"
+      style="margin-bottom: 1rem;"
+    >
+      {{ analyticsStore.staleDataWarning }}
+    </Message>
 
     <StatePanel
       v-if="initialLoading"
@@ -179,18 +189,6 @@
       </div>
     </div>
 
-    <StatePanel
-      v-if="dashboard?.total_records === 0"
-      variant="empty"
-      title="No data yet"
-      message="Start by adding your first health record to see trends and insights."
-    >
-      <template #action>
-        <router-link to="/records">
-          <Button label="Add First Record" icon="pi pi-plus" />
-        </router-link>
-      </template>
-    </StatePanel>
     </template>
   </div>
 </template>
@@ -212,6 +210,7 @@ import {
 } from 'chart.js'
 
 import Button from 'primevue/button'
+import Message from 'primevue/message'
 
 import KpiCard from '@/components/KpiCard.vue'
 import StatePanel from '@/components/StatePanel.vue'

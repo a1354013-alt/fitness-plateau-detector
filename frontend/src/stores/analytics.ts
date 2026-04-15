@@ -1,4 +1,4 @@
-﻿import { ref, computed, reactive } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { defineStore } from 'pinia'
 import { analyticsApi, type SummaryData, type DashboardData, type TrendsData } from '@/services/api'
 import { getApiErrorMessage } from '@/services/errors'
@@ -19,6 +19,34 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   const summaryStatus = reactive<DomainStatus>({ loading: false, error: null })
   const trendsStatus = reactive<DomainStatus>({ loading: false, error: null })
 
+  // When refresh fails but we still have previous successful data, show an explicit warning so users
+  // don't assume the UI is always up-to-date.
+  const stale = reactive({
+    dashboard: false,
+    summary: false,
+    trends: false,
+  })
+  const staleWarningDismissed = ref(false)
+
+  const staleDataWarning = computed(() => {
+    if (staleWarningDismissed.value) return null
+    const domains: string[] = []
+    if (stale.dashboard) domains.push('dashboard')
+    if (stale.trends) domains.push('charts')
+    if (stale.summary) domains.push('analysis')
+    if (domains.length === 0) return null
+    const label = domains.length === 1 ? domains[0] : `${domains.slice(0, -1).join(', ')} and ${domains[domains.length - 1]}`
+    return `Refresh failed for ${label} — showing the last successfully loaded data.`
+  })
+
+  function _resetStaleWarning() {
+    staleWarningDismissed.value = false
+  }
+
+  function dismissStaleDataWarning() {
+    staleWarningDismissed.value = true
+  }
+
   const dashboardPageError = computed(() => {
     if (!dashboard.value && dashboardStatus.error) return dashboardStatus.error
     if (!summary.value && summaryStatus.error) return summaryStatus.error
@@ -31,26 +59,34 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   })
 
   async function fetchDashboard() {
+    _resetStaleWarning()
+    const hadDashboard = dashboard.value != null
     dashboardStatus.loading = true
     dashboardStatus.error = null
     try {
       const res = await analyticsApi.dashboard()
       dashboard.value = res.data
+      stale.dashboard = false
     } catch (e: unknown) {
       dashboardStatus.error = getApiErrorMessage(e, 'Failed to fetch dashboard')
+      stale.dashboard = hadDashboard
     } finally {
       dashboardStatus.loading = false
     }
   }
 
   async function fetchTrends(days: number = 30) {
+    _resetStaleWarning()
+    const hadTrends = trends.value != null
     trendsStatus.loading = true
     trendsStatus.error = null
     try {
       const res = await analyticsApi.trends(days)
       trends.value = res.data
+      stale.trends = false
     } catch (e: unknown) {
       trendsStatus.error = getApiErrorMessage(e, 'Failed to fetch trends')
+      stale.trends = hadTrends
     } finally {
       trendsStatus.loading = false
     }
@@ -62,7 +98,12 @@ export const useAnalyticsStore = defineStore('analytics', () => {
   }
 
   async function fetchDashboardBundle(days: number = 30, target: number = 2000) {
+    _resetStaleWarning()
     calorieTarget.value = target
+
+    const hadSummary = summary.value != null
+    const hadDashboard = dashboard.value != null
+    const hadTrends = trends.value != null
 
     dashboardStatus.loading = true
     summaryStatus.loading = true
@@ -80,20 +121,26 @@ export const useAnalyticsStore = defineStore('analytics', () => {
 
     if (summaryRes.status === 'fulfilled') {
       summary.value = summaryRes.value.data
+      stale.summary = false
     } else {
       summaryStatus.error = getApiErrorMessage(summaryRes.reason, 'Failed to fetch analysis summary')
+      stale.summary = hadSummary
     }
 
     if (dashboardRes.status === 'fulfilled') {
       dashboard.value = dashboardRes.value.data
+      stale.dashboard = false
     } else {
       dashboardStatus.error = getApiErrorMessage(dashboardRes.reason, 'Failed to fetch dashboard')
+      stale.dashboard = hadDashboard
     }
 
     if (trendsRes.status === 'fulfilled') {
       trends.value = trendsRes.value.data
+      stale.trends = false
     } else {
       trendsStatus.error = getApiErrorMessage(trendsRes.reason, 'Failed to fetch trends')
+      stale.trends = hadTrends
     }
 
     dashboardStatus.loading = false
@@ -103,14 +150,18 @@ export const useAnalyticsStore = defineStore('analytics', () => {
 
   async function fetchAnalysisBundle(target: number = 2000) {
     // Analysis bundle = summary endpoint (includes plateau + reasons + summary payload).
+    _resetStaleWarning()
+    const hadSummary = summary.value != null
     summaryStatus.loading = true
     summaryStatus.error = null
     calorieTarget.value = target
     try {
       const res = await analyticsApi.summary(target)
       summary.value = res.data
+      stale.summary = false
     } catch (e: unknown) {
       summaryStatus.error = getApiErrorMessage(e, 'Failed to fetch analysis summary')
+      stale.summary = hadSummary
     } finally {
       summaryStatus.loading = false
     }
@@ -138,6 +189,8 @@ export const useAnalyticsStore = defineStore('analytics', () => {
     trendsStatus,
     dashboardPageError,
     analysisPageError,
+    staleDataWarning,
+    dismissStaleDataWarning,
 
     summaryText,
     analysisResultStatus,

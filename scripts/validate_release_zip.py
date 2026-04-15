@@ -32,7 +32,6 @@ REQUIRED_ENTRIES = (
     "backend/requirements.txt",
     "backend/alembic.ini",
     "backend/alembic/env.py",
-    "backend/alembic/versions/20260409_0001_initial.py",
     "frontend/dist/index.html",
 )
 
@@ -54,6 +53,15 @@ def validate_zip(path: Path) -> None:
     missing = [e for e in REQUIRED_ENTRIES if e not in names]
     if missing:
         raise SystemExit(f"Release zip is missing required entries: {', '.join(missing)}")
+
+    versions_prefix = "backend/alembic/versions/"
+    versions_files = [n for n in names if n.startswith(versions_prefix) and not n.endswith("/")]
+    if not versions_files:
+        raise SystemExit("Release zip is missing required directory: backend/alembic/versions/")
+
+    migration_files = [n for n in versions_files if n.endswith(".py")]
+    if not migration_files:
+        raise SystemExit("Release zip must include at least one Alembic migration under backend/alembic/versions/ (*.py)")
 
     extra: list[str] = []
     for n in names:

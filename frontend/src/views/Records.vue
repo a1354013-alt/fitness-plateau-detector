@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="page-container">
     <div class="page-header-row">
       <div>
@@ -178,7 +178,7 @@
 
         <Column field="protein" header="Protein" style="min-width: 80px">
           <template #body="{ data }">
-            <span v-if="data.protein">{{ data.protein }}g</span>
+            <span v-if="data.protein !== null && data.protein !== undefined">{{ data.protein }}g</span>
             <span v-else class="text-muted">—</span>
           </template>
         </Column>

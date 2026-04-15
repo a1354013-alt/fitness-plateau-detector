@@ -4,7 +4,6 @@ from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-
 PlateauStatus = Literal["losing", "plateau", "gaining", "insufficient_data"]
 ReasonsStatus = Literal["ok", "insufficient_data"]
 

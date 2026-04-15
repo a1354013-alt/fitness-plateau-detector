@@ -1,13 +1,15 @@
 from datetime import date
 from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlmodel import Session
+
 from app.database import get_session
 from app.schemas.health_record import (
     HealthRecordCreate,
-    HealthRecordUpdate,
-    HealthRecordResponse,
     HealthRecordListResponse,
+    HealthRecordResponse,
+    HealthRecordUpdate,
 )
 from app.services import health_record_service as svc
 

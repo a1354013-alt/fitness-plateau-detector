@@ -1,4 +1,4 @@
-﻿# PlateauBreaker
+# PlateauBreaker
 
 PlateauBreaker is a small full-stack app for logging daily health metrics and detecting weight plateaus.
 
@@ -65,7 +65,7 @@ npm run dev
 By default, the frontend calls `/api` (see `frontend/src/services/api.ts`).
 
 - In dev, Vite proxies `/api` to `http://localhost:8000` (see `frontend/vite.config.ts`).
-- In production, you can override the API base via `VITE_API_BASE_URL` (see `.env.example`).
+- In production, you can override the API base via `VITE_API_BASE_URL` (see `frontend/.env.example`).
 
 ## Production build (frontend)
 
@@ -101,10 +101,10 @@ npm test
 ## CI (recommended)
 
 - GitHub Actions workflow: `.github/workflows/ci.yml`
-- Frontend job runs `npm ci`, `npm test -- --run`, `npm run build`, then a release packaging smoke test:
+- Frontend job runs `npm ci`, `npm run lint`, `npm test -- --run`, `npm run build`, then a release packaging smoke test:
   - `python scripts/make_release_zip.py --out-dir release`
   - `python scripts/validate_release_zip.py --out-dir release`
-- Backend job runs `pytest -q` on Python 3.11 using the locked dependency set from `constraints.txt`.
+- Backend job runs `ruff check .`, a migration smoke test (`alembic upgrade head` against a temporary SQLite DB), then `pytest -q` on Python 3.11 using the locked dependency set from `constraints.txt`.
 
 ## Seed data (optional)
 
@@ -130,7 +130,11 @@ If the database already has records, the seed script exits without modifying dat
 
 ## Configuration (env vars)
 
-See `.env.example` for a starting point.
+See `.env.example` for backend env vars and `frontend/.env.example` for frontend build-time env vars.
+
+Note: the backend does **not** auto-load a `.env` file by default. If you copy `.env.example` to `.env`, either:
+- export the variables in your shell/session, or
+- run Uvicorn with `--env-file` (example from `backend/`: `uvicorn app.main:app --reload --env-file ../.env`).
 
 ### Backend
 

@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Generator
 
 from sqlalchemy import inspect
-from sqlmodel import SQLModel, Session, create_engine
+from sqlmodel import Session, SQLModel, create_engine
 
 
 def _resolve_db_path() -> Path:

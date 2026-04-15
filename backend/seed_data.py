@@ -1,4 +1,4 @@
-﻿"""backend/seed_data.py
+"""backend/seed_data.py
 
 Seeds the SQLite database with realistic health records for local testing.
 
@@ -13,9 +13,9 @@ Notes:
 
 from __future__ import annotations
 
+import os
 import random
 import sys
-import os
 from datetime import date, timedelta
 
 # Add backend/ to sys.path so `app.*` imports work when running as a script.

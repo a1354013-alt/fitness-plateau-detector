@@ -1,4 +1,4 @@
-﻿"""app.rules.plateau_detector
+"""app.rules.plateau_detector
 
 Plateau detection is evaluated over a 7-day calendar window.
 
@@ -25,9 +25,8 @@ from datetime import date, timedelta
 from typing import Literal
 
 from app.models.health_record import HealthRecord
-from app.rules.constants import WINDOW_DAYS, MIN_RECENT_DAYS
+from app.rules.constants import MIN_RECENT_DAYS, WINDOW_DAYS
 from app.schemas.analytics import PlateauResponse
-
 
 PlateauStatus = Literal["losing", "plateau", "gaining", "insufficient_data"]
 

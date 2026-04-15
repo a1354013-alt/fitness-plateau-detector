@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="page-container">
     <div class="page-header-row">
       <div class="page-header">
@@ -26,6 +26,16 @@
         />
       </div>
     </div>
+
+    <Message
+      v-if="analyticsStore.staleDataWarning"
+      severity="warn"
+      :closable="true"
+      @close="analyticsStore.dismissStaleDataWarning()"
+      style="margin-bottom: 1rem;"
+    >
+      {{ analyticsStore.staleDataWarning }}
+    </Message>
 
     <StatePanel
       v-if="analyticsStore.summaryStatus.loading && analyticsStore.summary == null"
@@ -218,6 +228,7 @@ import { computed, onMounted } from 'vue'
 
 import Button from 'primevue/button'
 import InputNumber from 'primevue/inputnumber'
+import Message from 'primevue/message'
 import StatePanel from '@/components/StatePanel.vue'
 
 import { useAnalyticsStore } from '@/stores/analytics'

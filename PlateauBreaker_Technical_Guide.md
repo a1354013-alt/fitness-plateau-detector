@@ -1,4 +1,4 @@
-﻿# PlateauBreaker Technical Guide
+# PlateauBreaker Technical Guide
 
 ## Backend API (FastAPI)
 
