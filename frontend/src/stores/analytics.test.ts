@@ -162,4 +162,70 @@ describe('analytics store', () => {
     expect(store.trendsStatus.error).toBeTruthy()
     expect(store.dashboardPageError).toBe(null)
   })
+
+  it('staleDataWarning aggregates domains and can be dismissed', async () => {
+    const store = useAnalyticsStore()
+
+    const dashboardMock = vi.mocked(analyticsApi.dashboard)
+    const trendsMock = vi.mocked(analyticsApi.trends)
+    const summaryMock = vi.mocked(analyticsApi.summary)
+
+    // First load succeeds so subsequent failures can become "stale".
+    dashboardMock.mockResolvedValueOnce(
+      wrap({
+        current_weight: 75,
+        avg_weight_7d: 74.5,
+        avg_sleep_7d: 7,
+        avg_calories_7d: 2000,
+        weight_change_7d: null,
+        total_records: 10,
+        last_record_date: '2026-04-01',
+      } satisfies DashboardData),
+    )
+    summaryMock.mockResolvedValueOnce(
+      wrap({
+        plateau: {
+          status: 'insufficient_data',
+          rule_a: null,
+          rule_b: null,
+          last7_avg: null,
+          prev7_avg: null,
+          avg_change: null,
+          last7_fluctuation: null,
+          last7_min: null,
+          last7_max: null,
+          data_completeness: null,
+          message: 'Need data',
+        },
+        reasons: {
+          status: 'insufficient_data',
+          message: null,
+          reasons: [],
+          all_reasons: [],
+          data_points: 0,
+          missing_days: 7,
+        },
+        summary: {
+          text: 'Need data',
+          insight: '',
+          status: 'insufficient_data',
+          top_reasons: [],
+        },
+      } satisfies SummaryData),
+    )
+    trendsMock.mockResolvedValueOnce(wrap({ days: 7, data_points: 0, trends: [] } satisfies TrendsData))
+
+    await store.fetchDashboardBundle(7, 2000)
+    expect(store.staleDataWarning).toBe(null)
+
+    dashboardMock.mockRejectedValueOnce(new Error('dashboard down'))
+    summaryMock.mockRejectedValueOnce(new Error('summary down'))
+    trendsMock.mockResolvedValueOnce(wrap({ days: 7, data_points: 0, trends: [] } satisfies TrendsData))
+
+    await store.fetchDashboardBundle(7, 2000)
+    expect(store.staleDataWarning).toContain('dashboard and analysis')
+
+    store.dismissStaleDataWarning()
+    expect(store.staleDataWarning).toBe(null)
+  })
 })

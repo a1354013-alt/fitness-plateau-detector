@@ -6,10 +6,12 @@ import signal
 import subprocess
 import sys
 import time
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+from zoneinfo import ZoneInfo
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -32,7 +34,7 @@ def _http_json(method: str, url: str, payload: dict | None = None) -> tuple[int,
 
 
 def _http_text(url: str) -> tuple[int, str]:
-    req = Request(url, method="GET")
+    req = Request(url, method="GET", headers={"Accept": "text/html"})
     try:
         with urlopen(req, timeout=5) as resp:
             raw = resp.read().decode("utf-8", errors="replace")
@@ -40,6 +42,17 @@ def _http_text(url: str) -> tuple[int, str]:
     except HTTPError as exc:
         raw = exc.read().decode("utf-8", errors="replace")
         return exc.code, raw
+
+
+def _http_raw(url: str, *, accept: str) -> tuple[int, dict[str, str], str]:
+    req = Request(url, method="GET", headers={"Accept": accept})
+    try:
+        with urlopen(req, timeout=5) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+            return resp.status, dict(resp.headers), raw
+    except HTTPError as exc:
+        raw = exc.read().decode("utf-8", errors="replace")
+        return exc.code, dict(exc.headers), raw
 
 
 def _wait_for(url: str, *, timeout_s: int = 30) -> None:
@@ -71,7 +84,6 @@ def _terminate(proc: subprocess.Popen) -> None:
 
 def main() -> int:
     backend_url = "http://127.0.0.1:8000"
-    frontend_url = "http://127.0.0.1:4173"
 
     dist_dir = REPO_ROOT / "frontend" / "dist"
     if not dist_dir.exists():
@@ -84,6 +96,7 @@ def main() -> int:
     backend_env = os.environ.copy()
     backend_env["PLATEAUBREAKER_DB_PATH"] = str(db_path)
     backend_env.setdefault("APP_TIMEZONE", "Asia/Taipei")
+    backend_env["PLATEAUBREAKER_FRONTEND_DIST_DIR"] = str(dist_dir.resolve())
 
     backend_proc = subprocess.Popen(
         [
@@ -107,21 +120,39 @@ def main() -> int:
         errors="replace",
     )
 
-    frontend_proc = subprocess.Popen(
-        [sys.executable, "-m", "http.server", "4173", "--directory", str(dist_dir)],
-        cwd=str(REPO_ROOT),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
-
     try:
-        _wait_for(f"{backend_url}/health")
+        start = time.time()
+        while True:
+            if backend_proc.poll() is not None:
+                out = ""
+                if backend_proc.stdout is not None:
+                    try:
+                        out = backend_proc.stdout.read()
+                    except Exception:
+                        out = ""
+                raise RuntimeError(f"Backend exited before /health was ready.\n\n{out[-4000:]}")
 
-        # Create one record safely in the past (timezone-agnostic)
-        record_date = (date.today() - timedelta(days=1)).isoformat()
+            try:
+                status, _ = _http_json("GET", f"{backend_url}/health")
+                if status == 200:
+                    break
+            except URLError:
+                pass
+
+            if time.time() - start > 60:
+                out = ""
+                if backend_proc.stdout is not None:
+                    try:
+                        out = backend_proc.stdout.read()
+                    except Exception:
+                        out = ""
+                raise RuntimeError(f"Timed out waiting for {backend_url}/health.\n\n{out[-4000:]}")
+
+            time.sleep(0.25)
+
+        # Create one record safely in the past under APP_TIMEZONE semantics.
+        tz = ZoneInfo(backend_env["APP_TIMEZONE"])
+        record_date = (datetime.now(timezone.utc).astimezone(tz).date() - timedelta(days=1)).isoformat()
         status, payload = _http_json(
             "POST",
             f"{backend_url}/api/health-records",
@@ -149,12 +180,18 @@ def main() -> int:
         assert status == 200, payload
         assert "summary" in payload and "plateau" in payload and "reasons" in payload
 
-        # Frontend dist is servable
-        status, body = _http_text(f"{frontend_url}/")
-        assert status == 200
-        assert "<title>" in body
+        # Backend serves SPA static files + history fallback.
+        for path in ("/", "/records", "/analysis"):
+            status, body = _http_text(f"{backend_url}{path}")
+            assert status == 200, (path, status, body[:200])
+            assert "<title>" in body, (path, body[:200])
+
+        # /api/* must never be polluted by SPA fallback even when Accept prefers HTML.
+        status, headers, body = _http_raw(f"{backend_url}/api/does-not-exist", accept="text/html")
+        assert status == 404
+        assert "application/json" in (headers.get("Content-Type") or headers.get("content-type") or "")
+        assert "Not Found" in body
     finally:
-        _terminate(frontend_proc)
         _terminate(backend_proc)
 
     return 0
@@ -162,4 +199,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

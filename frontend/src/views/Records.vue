@@ -50,7 +50,7 @@
           </div>
           <div class="form-group">
             <label>Weight (kg) *</label>
-            <InputNumber v-model="form.weight" :min="20" :max="300" :minFractionDigits="1" :maxFractionDigits="1" fluid />
+            <InputNumber v-model="form.weight" :min="20" :max="500" :minFractionDigits="1" :maxFractionDigits="1" fluid />
           </div>
         </div>
 
@@ -61,7 +61,7 @@
           </div>
           <div class="form-group">
             <label>Calories (kcal) *</label>
-            <InputNumber v-model="form.calories" :min="0" :max="10000" fluid />
+            <InputNumber v-model="form.calories" :min="0" :max="20000" fluid />
           </div>
         </div>
 
@@ -72,7 +72,7 @@
           </div>
           <div class="form-group">
             <label>Exercise (min)</label>
-            <InputNumber v-model="form.exercise_minutes" :min="0" :max="600" fluid />
+            <InputNumber v-model="form.exercise_minutes" :min="0" :max="1440" fluid />
           </div>
         </div>
 
@@ -83,7 +83,7 @@
           </div>
           <div class="form-group">
             <label>Steps</label>
-            <InputNumber v-model="form.steps" :min="0" :max="100000" fluid placeholder="Optional" />
+            <InputNumber v-model="form.steps" :min="0" :max="200000" fluid placeholder="Optional" />
           </div>
         </div>
 

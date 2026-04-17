@@ -5,6 +5,7 @@ from logging.config import fileConfig
 from pathlib import Path
 
 from sqlalchemy import engine_from_config, pool
+from sqlalchemy.engine.url import make_url
 from sqlmodel import SQLModel
 
 from alembic import context
@@ -23,8 +24,17 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Keep Alembic and the app on the same connection URL semantics.
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
-ensure_db_dir_exists()
+configured_url = config.get_main_option("sqlalchemy.url") or ""
+# Allow programmatic callers (tests/tools) to override the target DB URL by
+# setting it on the Alembic Config before running commands.
+if (not configured_url.strip()) or configured_url.strip() == "sqlite:///./data/plateaubreaker.sqlite3":
+    config.set_main_option("sqlalchemy.url", DATABASE_URL)
+    ensure_db_dir_exists()
+else:
+    # Ensure target SQLite directories exist when running against a custom URL.
+    url = make_url(configured_url)
+    if url.drivername.startswith("sqlite") and url.database:
+        Path(url.database).expanduser().resolve().parent.mkdir(parents=True, exist_ok=True)
 
 target_metadata = SQLModel.metadata
 

@@ -9,16 +9,17 @@ MAX_NOTE_LENGTH = 500
 MAX_EXERCISE_TYPE_LENGTH = 50
 MAX_CALORIES = 20000
 MAX_PROTEIN = 500
+MAX_EXERCISE_MINUTES = 1440
 MAX_STEPS = 200000
 
 
 class HealthRecordCreate(BaseModel):
     record_date: date
-    weight: float = Field(..., gt=0, lt=500, description="Weight in kg")
+    weight: float = Field(..., gt=0, le=500, description="Weight in kg")
     sleep_hours: float = Field(..., ge=0, le=24, description="Sleep hours")
     calories: int = Field(..., ge=0, le=MAX_CALORIES, description="Daily calories intake")
     protein: Optional[int] = Field(default=None, ge=0, le=MAX_PROTEIN)
-    exercise_minutes: int = Field(default=0, ge=0)
+    exercise_minutes: int = Field(default=0, ge=0, le=MAX_EXERCISE_MINUTES)
     exercise_type: Optional[str] = Field(default=None, max_length=MAX_EXERCISE_TYPE_LENGTH)
     steps: Optional[int] = Field(default=None, ge=0, le=MAX_STEPS)
     note: Optional[str] = Field(default=None, max_length=MAX_NOTE_LENGTH)
@@ -57,11 +58,11 @@ class HealthRecordCreate(BaseModel):
 
 class HealthRecordUpdate(BaseModel):
     record_date: Optional[date] = None
-    weight: Optional[float] = Field(default=None, gt=0, lt=500, description="Weight in kg")
+    weight: Optional[float] = Field(default=None, gt=0, le=500, description="Weight in kg")
     sleep_hours: Optional[float] = Field(default=None, ge=0, le=24, description="Sleep hours")
     calories: Optional[int] = Field(default=None, ge=0, le=MAX_CALORIES, description="Daily calories intake")
     protein: Optional[int] = Field(default=None, ge=0, le=MAX_PROTEIN)
-    exercise_minutes: Optional[int] = Field(default=None, ge=0)
+    exercise_minutes: Optional[int] = Field(default=None, ge=0, le=MAX_EXERCISE_MINUTES)
     exercise_type: Optional[str] = Field(default=None, max_length=MAX_EXERCISE_TYPE_LENGTH)
     steps: Optional[int] = Field(default=None, ge=0, le=MAX_STEPS)
     note: Optional[str] = Field(default=None, max_length=MAX_NOTE_LENGTH)

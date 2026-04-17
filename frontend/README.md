@@ -54,7 +54,7 @@ npm test
 - The repository CI does more than frontend test/build:
   - frontend `npm ci`
   - frontend `npm run lint`
-  - frontend `npm test -- --run`
+  - frontend `npm run test:ci` (coverage fail-under gate)
   - frontend `npm run build`
   - release packaging smoke test via `scripts/make_release_zip.py` + `scripts/validate_release_zip.py`
 - Backend tests and migration/release rules are documented in the root `README.md`.

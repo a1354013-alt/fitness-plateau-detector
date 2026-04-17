@@ -73,6 +73,7 @@ const DataTableStub = defineComponent({
   name: 'DataTableStub',
   props: {
     value: { type: Array, default: () => [] },
+    loading: { type: Boolean, default: false },
     paginator: { type: Boolean, default: false },
   },
   setup(props, { slots }) {
@@ -83,7 +84,7 @@ const DataTableStub = defineComponent({
         { 'data-test': 'datatable', 'data-paginator': String(props.paginator) },
         [
           ...(slots.default ? slots.default() : []),
-          (props.value as unknown[]).length === 0 && slots.empty ? slots.empty() : null,
+          !props.loading && (props.value as unknown[]).length === 0 && slots.empty ? slots.empty() : null,
         ],
       )
   },
@@ -214,6 +215,36 @@ describe('Records view', () => {
     const table = wrapper.get('[data-test="datatable"]')
     expect(table.attributes('data-paginator')).toBe('true')
     expect(wrapper.text()).toContain('Showing')
+  })
+
+  it('does not show empty state while loading (table remains mounted)', async () => {
+    const listMock = vi.mocked(healthRecordsApi.list)
+    listMock.mockReturnValueOnce(new Promise(() => undefined) as unknown as never)
+
+    const wrapper = mount(Records, {
+      global: {
+        directives: {
+          tooltip: () => undefined,
+        },
+        stubs: {
+          Button: ButtonStub,
+          Dialog: DialogStub,
+          ConfirmDialog: true,
+          DatePicker: true,
+          InputNumber: true,
+          InputText: true,
+          Textarea: true,
+          DataTable: DataTableStub,
+          Column: ColumnStub,
+        },
+      },
+    })
+
+    await Promise.resolve()
+    await nextTick()
+
+    expect(wrapper.text()).not.toContain('No records yet')
+    expect(wrapper.find('[data-test="datatable"]').exists()).toBe(true)
   })
 
   it('delete triggers confirm, and store performs empty-page fallback (refetch twice)', async () => {

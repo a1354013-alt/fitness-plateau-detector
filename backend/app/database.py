@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Generator
 
 from sqlalchemy import inspect
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, create_engine
 
 
 def _resolve_db_path() -> Path:
@@ -61,13 +61,16 @@ engine = create_engine(
 
 def create_db_and_tables():
     ensure_db_dir_exists()
-    # Bootstrap only when the database is empty. This avoids silently applying
-    # schema changes via `create_all` after the first run; use migrations for
-    # evolving schemas over time.
+    # Bootstrap only when the database is empty. We intentionally apply Alembic
+    # migrations instead of `SQLModel.metadata.create_all` so DB-level contracts
+    # (CHECK constraints, column lengths, etc.) are enforced even if someone
+    # writes directly to the DB without going through the API.
     inspector = inspect(engine)
     if inspector.get_table_names():
         return
-    SQLModel.metadata.create_all(engine)
+    from app.migrations import upgrade_to_head
+
+    upgrade_to_head(sqlalchemy_url=DATABASE_URL)
 
 
 def get_session() -> Generator[Session, None, None]:

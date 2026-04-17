@@ -14,6 +14,7 @@ from starlette.responses import Response
 
 from app.api import analytics_router, health_records_router
 from app.database import create_db_and_tables
+from app.version import get_version_info
 
 
 def _parse_cors_origins(value: str | None) -> list[str]:
@@ -32,10 +33,13 @@ async def lifespan(_: FastAPI):
     yield
 
 
+_version = get_version_info()
+_api_name = f"{_version.name} API"
+
 app = FastAPI(
-    title="PlateauBreaker API",
+    title=_api_name,
     description="Rule-based health analytics backend for weight plateau analysis",
-    version="1.0.0",
+    version=_version.version,
     lifespan=lifespan,
 )
 
@@ -59,7 +63,10 @@ app.add_middleware(
 app.include_router(health_records_router)
 app.include_router(analytics_router)
 
-_dist_dir = Path(__file__).resolve().parent / "static" / "dist"
+_dist_dir = Path(
+    os.getenv("PLATEAUBREAKER_FRONTEND_DIST_DIR")
+    or (Path(__file__).resolve().parent / "static" / "dist")
+).resolve()
 _index_html = _dist_dir / "index.html"
 
 
@@ -95,8 +102,8 @@ class _SpaFallbackMiddleware(BaseHTTPMiddleware):
 @app.get("/api/meta")
 def api_meta():
     return {
-        "name": "PlateauBreaker API",
-        "version": "1.0.0",
+        "name": _api_name,
+        "version": _version.version,
         "docs": "/docs",
     }
 

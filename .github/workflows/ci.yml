@@ -10,6 +10,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check version single source-of-truth
+        run: python scripts/check_version_sync.py
+
       - name: Use Python
         uses: actions/setup-python@v5
         with:
@@ -57,7 +60,7 @@ jobs:
 
       - name: Test
         working-directory: frontend
-        run: npm test -- --run --coverage
+        run: npm run test:ci
 
       - name: Build
         working-directory: frontend

@@ -40,7 +40,18 @@
 
 - `note`：trim + 長度上限（`MAX_NOTE_LENGTH=500`），純空白視為 `null`
 - `exercise_type`：trim + collapse whitespace
-- `calories / protein / steps`：合理上限與 422 錯誤（避免極端值讓 KPI/圖表失真）
+- `calories / protein / steps / exercise_minutes`：合理上限與 422 錯誤（避免極端值讓 KPI/圖表失真）
+
+### DB 層防線（CHECK constraints）
+
+僅靠 API 驗證不足以阻止「繞過 API 直接寫 DB」造成資料污染，因此在 Alembic migration 中加入可回滾的 CHECK constraints（`backend/alembic/versions/20260417_0003_health_record_checks.py`）：
+
+- `weight`：`(0, 500]`
+- `sleep_hours`：`[0, 24]`
+- `calories`：`[0, 20000]`
+- `protein`：`NULL` 或 `[0, 500]`
+- `exercise_minutes`：`[0, 1440]`
+- `steps`：`NULL` 或 `[0, 200000]`
 
 ## 3) Backend API（FastAPI）
 
@@ -116,8 +127,8 @@ Workflow：`.github/workflows/ci.yml`
 
 - `contract`：OpenAPI → types drift 檢查
 - `backend`：`ruff` + `alembic upgrade head` smoke + `pytest --cov` gate
-- `frontend`：`eslint` + `vitest --coverage` gate + `vite build` + release packaging smoke
-- `integration`：啟動 backend、驗證主要 API、驗證前端 build 產物可服務（`scripts/smoke_test_ci.py`）
+- `frontend`：`eslint` + `vitest` coverage fail-under gate（`npm run test:ci`）+ `vite build` + release packaging smoke
+- `integration`：啟動 backend、驗證主要 API、驗證 backend 提供 SPA 靜態檔與 history fallback，並確保 `/api/*` 不被 fallback 汙染（`scripts/smoke_test_ci.py`）
 
 ## 8) Delivery（P3）
 
@@ -131,4 +142,3 @@ Workflow：`.github/workflows/ci.yml`
 
 - `scripts/make_release_zip.py`：產生乾淨可交付 zip（排除 tests/cache/db/node_modules）
 - `scripts/validate_release_zip.py`：驗證 zip 內容符合交付標準
-

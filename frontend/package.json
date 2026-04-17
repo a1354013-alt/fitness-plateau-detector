@@ -13,6 +13,7 @@
     "capture:screenshots": "node ./scripts/capture-screenshots.mjs",
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run",
+    "test:ci": "vitest run --coverage && node ./scripts/check_coverage.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -5,10 +5,10 @@
 ## 作品亮點（求職展示重點）
 
 - **時間語義收斂**：所有「today / 最近 7 天」都走同一套 `APP_TIMEZONE`（預設 `Asia/Taipei`）的 anchor date，避免部署在 UTC 主機造成日期偏移。
-- **資料契約防線完整**：`record_date` 在 backend 端拒絕未來日期（422 + 可讀錯誤），前端驗證不再是唯一防線。
+- **資料契約防線完整**：API 層驗證 + DB 層 CHECK constraints（Alembic migrations），避免繞過 API 直接寫入 DB 造成資料污染。
 - **時間戳契約明確**：`created_at / updated_at` 統一輸出 **ISO 8601 UTC + `Z`**，避免 naive datetime 的模糊語義。
 - **API contract 單一真相**：以 **FastAPI OpenAPI** 為唯一來源，前端型別由 **openapi-typescript** 生成，並在 CI 內做 drift 檢查。
-- **CI 更像正式作品**：backend / frontend 都有 coverage gate + integration smoke（啟動 backend、驗證主要 API、驗證前端 build 可服務）。
+- **CI 更像正式作品**：backend / frontend 都有 coverage gate + integration smoke（啟動 backend、驗證主要 API、驗證 backend 提供 SPA 靜態檔與 history fallback，並確保 `/api/*` 不被 fallback 汙染）。
 - **交付可落地**：提供 `Dockerfile` + `docker-compose.yml` 一鍵啟動 demo；release zip 由腳本生成並驗證內容乾淨。
 
 ## Screenshots
@@ -99,6 +99,7 @@ location / {
 1. backend OpenAPI 是唯一來源（FastAPI / Pydantic schemas）。
 2. 生成前端型別：`frontend/src/generated/api.ts`
 3. CI 會跑 `python scripts/check_api_contract.py`，確保 schema 變更不會讓前後端漂移。
+4. 版本資訊單一來源：`version.json`（CI 會檢查 frontend/package.json 版本同步）。
 
 本機更新流程：
 
@@ -141,15 +142,18 @@ alembic -c alembic.ini upgrade head
 cd ../frontend
 npm ci
 npm run lint
-npm test -- --run --coverage
+npm run test:ci
 npm run build
 
 # contract drift
 cd ..
+python scripts/check_version_sync.py
 python scripts/check_api_contract.py
 
 # release
 python scripts/make_release_zip.py --out-dir release
 python scripts/validate_release_zip.py --out-dir release
-```
 
+# integration (backend serves SPA + history fallback)
+python scripts/smoke_test_ci.py
+```
